@@ -97,6 +97,7 @@
       display: flex;
       align-items: center;
       gap: 16px;
+      flex-wrap: wrap;
     }
 
     .logo {
@@ -110,12 +111,30 @@
       justify-content: center;
     }
 
+    .title-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
     .title-section h1 {
       font-size: 24px;
       font-weight: 600;
       letter-spacing: -0.02em;
       color: hsl(var(--foreground));
-      margin-bottom: 4px;
+      margin-bottom: 0;
+    }
+
+    .title-section .connection-status {
+      display: inline-flex;
+      width: fit-content;
+    }
+
+    /* Status Section */
+    .status-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
     /* Connection Status */
@@ -123,10 +142,10 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 4px 12px;
+      padding: 6px 12px;
       background: hsl(var(--secondary));
       border-radius: 9999px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
       color: hsl(var(--secondary-foreground));
     }
@@ -136,10 +155,50 @@
       height: 8px;
       border-radius: 50%;
       background: #22c55e;
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
 
     .status-dot.disconnected {
       background: #ef4444;
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Server Status */
+    .server-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: hsl(var(--secondary));
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 500;
+      color: hsl(var(--secondary-foreground));
+    }
+
+    /* Stats Overview */
+    .stats-overview {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: hsl(var(--secondary));
+      border-radius: calc(var(--radius) - 2px);
+      font-size: 14px;
+      font-weight: 500;
+      color: hsl(var(--secondary-foreground));
+      white-space: nowrap;
     }
 
     /* Logout Button */
@@ -167,28 +226,10 @@
       transform: translateY(1px);
     }
 
-    /* Stats Overview */
-    .stats-overview {
-      display: flex;
-      gap: 8px;
-    }
-
-    .stat-card {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      background: hsl(var(--secondary));
-      border-radius: calc(var(--radius) - 2px);
-      font-size: 14px;
-      font-weight: 500;
-      color: hsl(var(--secondary-foreground));
-    }
-
     /* Grid */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 24px;
       margin-top: 24px;
     }
@@ -201,10 +242,20 @@
       padding: 20px;
       transition: all 0.2s ease;
       animation: fadeIn 0.3s ease-out;
+      position: relative;
     }
 
     .card:hover {
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .card.offline {
+      opacity: 0.6;
+      background: hsl(var(--card));
+    }
+
+    .card.offline:hover {
+      box-shadow: none;
     }
 
     @keyframes fadeIn {
@@ -221,14 +272,21 @@
     .card-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       margin-bottom: 16px;
+    }
+
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
     }
 
     .server-info {
       display: flex;
-      align-items: center;
-      gap: 12px;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .server-icon {
@@ -240,6 +298,7 @@
       align-items: center;
       justify-content: center;
       color: hsl(var(--secondary-foreground));
+      flex-shrink: 0;
     }
 
     .server-name {
@@ -254,7 +313,31 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      margin-top: 4px;
+    }
+
+    /* Offline Badge */
+    .offline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: #ef4444;
+      color: white;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .offline-badge i {
+      width: 12px;
+      height: 12px;
+    }
+
+    .hidden {
+      display: none;
     }
 
     /* Metric Grid */
@@ -396,14 +479,35 @@
     }
 
     /* Responsive */
+    @media (max-width: 1024px) {
+      .header-right {
+        width: 100%;
+        order: 3;
+        flex-direction: column;
+      }
+      .stats-overview {
+        width: 100%;
+        order: 2;
+      }
+      .logout-btn {
+        width: 100%;
+        justify-content: center;
+      }
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     @media (max-width: 768px) {
       body { padding: 16px; }
       .header { flex-direction: column; align-items: flex-start; }
-      .header-right { width: 100%; }
+      .header-right { flex-direction: column; width: 100%; }
       .logout-btn { width: 100%; justify-content: center; }
-      .stats-overview { width: 100%; }
+      .stats-overview { width: 100%; flex-direction: column; }
       .metric-grid { grid-template-columns: 1fr; }
       .network-stats { grid-column: span 1; }
+      .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -418,24 +522,20 @@
           <h1>Server Monitor</h1>
           <div class="connection-status">
             <span class="status-dot" id="statusDot"></span>
-            <span id="status">Connecting...</span>
+            <span id="wsStatus">Connecting...</span>
           </div>
         </div>
       </div>
       
       <div class="header-right">
         <div class="stats-overview">
-          <div class="stat-card">
-            <i data-lucide="server" class="icon"></i>
-            <span id="serverCount">0</span> servers
+          <div class="server-status">
+            <i data-lucide="server" style="width: 14px; height: 14px;"></i>
+            <span id="serverStatus">0 / 0</span>
           </div>
           <div class="stat-card">
             <i data-lucide="cpu" class="icon"></i>
             <span id="avgCpu">0</span>% avg
-          </div>
-          <div class="stat-card">
-            <i data-lucide="activity" class="icon"></i>
-            <span>Live</span>
           </div>
         </div>
 
@@ -452,6 +552,10 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    // Configuration: offline threshold in seconds
+    const OFFLINE_THRESHOLD_SECONDS = 30;
+    const REFRESH_INTERVAL_MS = 5000; // 5 seconds
+
     // Logout function
     async function logout() {
       try {
@@ -465,19 +569,23 @@
     }
 
     const grid = document.getElementById("grid");
-    const statusEl = document.getElementById("status");
+    const wsStatusEl = document.getElementById("wsStatus");
     const statusDot = document.getElementById("statusDot");
-    const serverCountEl = document.getElementById("serverCount");
+    const serverStatusEl = document.getElementById("serverStatus");
     const avgCpuEl = document.getElementById("avgCpu");
     
     const state = {};
+    let isWebSocketConnected = false;
 
     function updateStats() {
       const servers = Object.keys(state);
-      serverCountEl.textContent = servers.length;
+      const onlineServers = servers.filter(id => state[id].online === true);
+      const totalServers = servers.length;
       
-      if (servers.length > 0) {
-        const avgCpu = servers.reduce((acc, id) => acc + state[id].cpu, 0) / servers.length;
+      serverStatusEl.textContent = `${onlineServers.length} / ${totalServers}`;
+      
+      if (onlineServers.length > 0) {
+        const avgCpu = onlineServers.reduce((acc, id) => acc + state[id].cpu, 0) / onlineServers.length;
         avgCpuEl.textContent = avgCpu.toFixed(1);
       } else {
         avgCpuEl.textContent = '0';
@@ -501,6 +609,10 @@
       return (v / (1024 * 1024 * 1024)).toFixed(2) + ' GB/s';
     }
 
+    function isServerOffline(m) {
+      return m.online === false || m.last_seen_seconds > OFFLINE_THRESHOLD_SECONDS;
+    }
+
     function render() {
       const serverIds = Object.keys(state).sort();
       
@@ -520,101 +632,152 @@
         return;
       }
 
-      grid.innerHTML = "";
-      
+      const emptyState = grid.querySelector(".empty-state");
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      let createdNewCard = false;
+
       serverIds.forEach(id => {
         const m = state[id];
+        const offline = isServerOffline(m);
         const lastUpdate = new Date(m.ts * 1000);
         const timeAgo = getTimeAgo(lastUpdate);
-        
-        const card = document.createElement("div");
-        card.className = "card";
-        
-        card.innerHTML = `
-          <div class="card-header">
-            <div class="server-info">
-              <div class="server-icon">
-                <i data-lucide="server" class="icon"></i>
+        const offlineStatusText = offline ?
+          `Last seen ${m.last_seen_seconds}s ago` :
+          timeAgo;
+
+        let card = grid.querySelector(`[data-server-id="${id}"]`);
+        if (!card) {
+          card = document.createElement("div");
+          card.className = "card";
+          card.dataset.serverId = id;
+          card.innerHTML = `
+            <div class="card-header">
+              <div class="card-header-left">
+                <div class="server-icon">
+                  <i data-lucide="server" class="icon"></i>
+                </div>
+                <div class="server-info">
+                  <div class="server-name" data-field="server-name">${id}</div>
+                  <div class="timestamp">
+                    <i data-lucide="clock" class="icon-sm"></i>
+                    <span data-field="timestamp" title="${lastUpdate.toLocaleString()}">${offlineStatusText}</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div class="server-name">${id}</div>
-                <div class="timestamp">
-                  <i data-lucide="clock" class="icon-sm"></i>
-                  <span title="${lastUpdate.toLocaleString()}">${timeAgo}</span>
+              <div class="offline-badge hidden" data-field="offline-badge">
+                <i data-lucide="alert-circle"></i>
+                <span>Offline</span>
+              </div>
+            </div>
+
+            <div class="metric-grid">
+              <!-- CPU -->
+              <div class="metric-item">
+                <div class="metric-label">
+                  <i data-lucide="cpu" class="icon-sm"></i>
+                  CPU
+                </div>
+                <div class="metric-value">
+                  <span data-field="cpu-value">0.0</span><span class="metric-unit">%</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-indicator cpu" data-field="cpu-bar" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- RAM -->
+              <div class="metric-item">
+                <div class="metric-label">
+                  <i data-lucide="memory-stick" class="icon-sm"></i>
+                  RAM
+                </div>
+                <div class="metric-value">
+                  <span data-field="ram-value">0.0</span><span class="metric-unit">%</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-indicator ram" data-field="ram-bar" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Disk -->
+              <div class="metric-item">
+                <div class="metric-label">
+                  <i data-lucide="hard-drive" class="icon-sm"></i>
+                  Disk
+                </div>
+                <div class="metric-value">
+                  <span data-field="disk-value">0.0</span><span class="metric-unit">%</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-indicator disk" data-field="disk-bar" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Network Stats -->
+              <div class="network-stats">
+                <div class="network-item">
+                  <i data-lucide="download" class="icon-sm" style="color: #3b82f6;"></i>
+                  <div class="network-info">
+                    <span class="network-label">Download</span>
+                    <span class="network-value" data-field="net-rx">0 B/s</span>
+                  </div>
+                </div>
+                <div class="network-item">
+                  <i data-lucide="upload" class="icon-sm" style="color: #10b981;"></i>
+                  <div class="network-info">
+                    <span class="network-label">Upload</span>
+                    <span class="network-value" data-field="net-tx">0 B/s</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          
-          <div class="metric-grid">
-            <!-- CPU -->
-            <div class="metric-item">
-              <div class="metric-label">
-                <i data-lucide="cpu" class="icon-sm"></i>
-                CPU
-              </div>
-              <div class="metric-value">
-                ${m.cpu.toFixed(1)}<span class="metric-unit">%</span>
-              </div>
-              <div class="progress">
-                <div class="progress-indicator cpu" style="width: ${m.cpu}%"></div>
-              </div>
-            </div>
-            
-            <!-- RAM -->
-            <div class="metric-item">
-              <div class="metric-label">
-                <i data-lucide="memory-stick" class="icon-sm"></i>
-                RAM
-              </div>
-              <div class="metric-value">
-                ${m.ram.toFixed(1)}<span class="metric-unit">%</span>
-              </div>
-              <div class="progress">
-                <div class="progress-indicator ram" style="width: ${m.ram}%"></div>
-              </div>
-            </div>
-            
-            <!-- Disk -->
-            <div class="metric-item">
-              <div class="metric-label">
-                <i data-lucide="hard-drive" class="icon-sm"></i>
-                Disk
-              </div>
-              <div class="metric-value">
-                ${m.disk.toFixed(1)}<span class="metric-unit">%</span>
-              </div>
-              <div class="progress">
-                <div class="progress-indicator disk" style="width: ${m.disk}%"></div>
-              </div>
-            </div>
-            
-            <!-- Network Stats -->
-            <div class="network-stats">
-              <div class="network-item">
-                <i data-lucide="download" class="icon-sm" style="color: #3b82f6;"></i>
-                <div class="network-info">
-                  <span class="network-label">Download</span>
-                  <span class="network-value">${formatBps(m.net_rx_bps)}</span>
-                </div>
-              </div>
-              <div class="network-item">
-                <i data-lucide="upload" class="icon-sm" style="color: #10b981;"></i>
-                <div class="network-info">
-                  <span class="network-label">Upload</span>
-                  <span class="network-value">${formatBps(m.net_tx_bps)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        grid.appendChild(card);
+          `;
+
+          grid.appendChild(card);
+          createdNewCard = true;
+        }
+
+        card.classList.toggle("offline", offline);
+
+        const offlineBadge = card.querySelector("[data-field='offline-badge']");
+        if (offlineBadge) {
+          offlineBadge.classList.toggle("hidden", !offline);
+        }
+
+        const timestampEl = card.querySelector("[data-field='timestamp']");
+        if (timestampEl) {
+          timestampEl.textContent = offlineStatusText;
+          timestampEl.title = lastUpdate.toLocaleString();
+        }
+
+        const cpuValueEl = card.querySelector("[data-field='cpu-value']");
+        const cpuBarEl = card.querySelector("[data-field='cpu-bar']");
+        if (cpuValueEl) cpuValueEl.textContent = m.cpu.toFixed(1);
+        if (cpuBarEl) cpuBarEl.style.width = `${m.cpu}%`;
+
+        const ramValueEl = card.querySelector("[data-field='ram-value']");
+        const ramBarEl = card.querySelector("[data-field='ram-bar']");
+        if (ramValueEl) ramValueEl.textContent = m.ram.toFixed(1);
+        if (ramBarEl) ramBarEl.style.width = `${m.ram}%`;
+
+        const diskValueEl = card.querySelector("[data-field='disk-value']");
+        const diskBarEl = card.querySelector("[data-field='disk-bar']");
+        if (diskValueEl) diskValueEl.textContent = m.disk.toFixed(1);
+        if (diskBarEl) diskBarEl.style.width = `${m.disk}%`;
+
+        const netRxEl = card.querySelector("[data-field='net-rx']");
+        const netTxEl = card.querySelector("[data-field='net-tx']");
+        if (netRxEl) netRxEl.textContent = formatBps(m.net_rx_bps);
+        if (netTxEl) netTxEl.textContent = formatBps(m.net_tx_bps);
       });
-      
-      // Initialize Lucide icons for all new elements
-      lucide.createIcons();
-      
+
+      if (createdNewCard) {
+        lucide.createIcons();
+      }
+
       updateStats();
     }
 
@@ -623,7 +786,18 @@
         const res = await fetch('/api/latest');
         const json = await res.json();
         if (json.ok) {
-          json.data.forEach(m => state[m.server_id] = m);
+          json.data.forEach(m => {
+            // Merge with existing state if it exists
+            if (state[m.server_id]) {
+              // Preserve last_seen_seconds from backend or calculate it
+              state[m.server_id] = {
+                ...state[m.server_id],
+                ...m
+              };
+            } else {
+              state[m.server_id] = m;
+            }
+          });
           render();
         }
       } catch (error) {
@@ -642,21 +816,27 @@
     });
 
     socket.on('connect', () => {
-      statusEl.textContent = 'Connected';
+      isWebSocketConnected = true;
+      wsStatusEl.textContent = 'Connected';
       statusDot.className = 'status-dot';
     });
     
     socket.on('disconnect', () => {
-      statusEl.textContent = 'Disconnected';
+      isWebSocketConnected = false;
+      wsStatusEl.textContent = 'Disconnected';
       statusDot.classList.add('disconnected');
     });
     
     socket.on('connect_error', () => {
-      statusEl.textContent = 'Connection error';
+      isWebSocketConnected = false;
+      wsStatusEl.textContent = 'Connection error';
       statusDot.classList.add('disconnected');
     });
     
     socket.on('metric', (m) => {
+      // On socket update, mark server as immediately online
+      m.online = true;
+      m.last_seen_seconds = 0;
       state[m.server_id] = m;
       render();
     });
@@ -664,7 +844,12 @@
     // Initial load
     loadLatest();
 
-    // Update timestamps every minute
+    // Auto-refresh latest data every 5 seconds to detect offline servers
+    setInterval(() => {
+      loadLatest();
+    }, REFRESH_INTERVAL_MS);
+
+    // Update timestamps every minute for display
     setInterval(() => {
       if (Object.keys(state).length > 0) {
         render();

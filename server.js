@@ -196,10 +196,13 @@ app.post("/api/ingest", verifyIngest, (req, res) => {
 });
 
 
+const OFFLINE_AFTER_SECONDS = Number(process.env.OFFLINE_AFTER_SECONDS || 15);
 
 
 // Latest per server
 app.get("/api/latest", requireLogin, (req, res) => {
+  const now = Math.floor(Date.now() / 1000);
+
   const rows = db
     .prepare(
       `
@@ -215,8 +218,15 @@ app.get("/api/latest", requireLogin, (req, res) => {
     )
     .all();
 
-  res.json({ ok: true, data: rows });
+  const data = rows.map((m) => ({
+    ...m,
+    online: (now - m.ts) <= OFFLINE_AFTER_SECONDS,
+    last_seen_seconds: now - m.ts,
+  }));
+
+  res.json({ ok: true, data });
 });
+
 
 // Redirect root to dashboard (with auth)
 app.get("/", requireLogin, (req, res) => {
