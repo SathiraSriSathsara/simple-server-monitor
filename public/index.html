@@ -432,6 +432,65 @@
       color: hsl(var(--card-foreground));
     }
 
+    .info-panel {
+      grid-column: span 2;
+      background: hsl(var(--secondary));
+      border-radius: calc(var(--radius) - 2px);
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 16px;
+      margin-top: 8px;
+    }
+
+    .info-panel.hidden {
+      display: none;
+    }
+
+    .info-toggle {
+      grid-column: span 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      color: hsl(var(--muted-foreground));
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      padding: 0;
+    }
+
+    .info-toggle:hover {
+      color: hsl(var(--foreground));
+    }
+
+    .info-toggle .icon-sm {
+      transition: transform 0.2s ease;
+    }
+
+    .info-toggle.is-open .icon-sm {
+      transform: rotate(180deg);
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .info-label {
+      font-weight: 500;
+    }
+
+    .info-value {
+      color: hsl(var(--card-foreground));
+      font-weight: 600;
+    }
+
     /* Empty State */
     .empty-state {
       grid-column: 1 / -1;
@@ -508,6 +567,8 @@
       .network-stats { grid-column: span 1; }
       .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
       .grid { grid-template-columns: 1fr; }
+      .info-panel { grid-column: span 1; grid-template-columns: 1fr; }
+      .info-toggle { grid-column: span 1; }
     }
   </style>
 </head>
@@ -576,6 +637,24 @@
     
     const state = {};
     let isWebSocketConnected = false;
+
+    function updateInfoToggle(card) {
+      const infoOpen = card.dataset.infoOpen === "true";
+      const toggleButton = card.querySelector("[data-action='toggle-info']");
+      const infoPanel = card.querySelector(".info-panel");
+
+      if (toggleButton) {
+        const toggleText = toggleButton.querySelector("[data-field='info-toggle-text']");
+        if (toggleText) {
+          toggleText.textContent = infoOpen ? "Hide Info" : "Show Info";
+        }
+        toggleButton.classList.toggle("is-open", infoOpen);
+      }
+
+      if (infoPanel) {
+        infoPanel.classList.toggle("hidden", !infoOpen);
+      }
+    }
 
     function updateStats() {
       const servers = Object.keys(state);
@@ -653,6 +732,7 @@
           card = document.createElement("div");
           card.className = "card";
           card.dataset.serverId = id;
+          card.dataset.infoOpen = "false";
           card.innerHTML = `
             <div class="card-header">
               <div class="card-header-left">
@@ -733,6 +813,38 @@
                   </div>
                 </div>
               </div>
+
+              <button class="info-toggle" type="button" data-action="toggle-info">
+                <span data-field="info-toggle-text">Show Info</span>
+                <i data-lucide="chevron-down" class="icon-sm"></i>
+              </button>
+
+              <div class="info-panel hidden">
+                <div class="info-item">
+                  <span class="info-label">Hostname</span>
+                  <span class="info-value" data-field="info-hostname">-</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">OS</span>
+                  <span class="info-value" data-field="info-os">-</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">CPU Model</span>
+                  <span class="info-value" data-field="info-cpu-model">-</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">CPU Cores</span>
+                  <span class="info-value" data-field="info-cpu-cores">-</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">RAM Total</span>
+                  <span class="info-value" data-field="info-ram-total">-</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Disk Total</span>
+                  <span class="info-value" data-field="info-disk-total">-</span>
+                </div>
+              </div>
             </div>
           `;
 
@@ -741,6 +853,8 @@
         }
 
         card.classList.toggle("offline", offline);
+
+        updateInfoToggle(card);
 
         const offlineBadge = card.querySelector("[data-field='offline-badge']");
         if (offlineBadge) {
@@ -772,6 +886,21 @@
         const netTxEl = card.querySelector("[data-field='net-tx']");
         if (netRxEl) netRxEl.textContent = formatBps(m.net_rx_bps);
         if (netTxEl) netTxEl.textContent = formatBps(m.net_tx_bps);
+
+        const info = m.info || {};
+        const infoHostnameEl = card.querySelector("[data-field='info-hostname']");
+        const infoOsEl = card.querySelector("[data-field='info-os']");
+        const infoCpuModelEl = card.querySelector("[data-field='info-cpu-model']");
+        const infoCpuCoresEl = card.querySelector("[data-field='info-cpu-cores']");
+        const infoRamTotalEl = card.querySelector("[data-field='info-ram-total']");
+        const infoDiskTotalEl = card.querySelector("[data-field='info-disk-total']");
+
+        if (infoHostnameEl) infoHostnameEl.textContent = info.hostname || "-";
+        if (infoOsEl) infoOsEl.textContent = info.os || "-";
+        if (infoCpuModelEl) infoCpuModelEl.textContent = info.cpu_model || "-";
+        if (infoCpuCoresEl) infoCpuCoresEl.textContent = Number.isFinite(info.cpu_cores) ? String(info.cpu_cores) : "-";
+        if (infoRamTotalEl) infoRamTotalEl.textContent = Number.isFinite(info.ram_total_mb) ? `${info.ram_total_mb} MB` : "-";
+        if (infoDiskTotalEl) infoDiskTotalEl.textContent = Number.isFinite(info.disk_total_gb) ? `${info.disk_total_gb} GB` : "-";
       });
 
       if (createdNewCard) {
@@ -807,6 +936,22 @@
 
     // Initialize Lucide icons
     lucide.createIcons();
+
+    grid.addEventListener("click", (event) => {
+      const toggleButton = event.target.closest("[data-action='toggle-info']");
+      if (!toggleButton) {
+        return;
+      }
+
+      const card = toggleButton.closest("[data-server-id]");
+      if (!card) {
+        return;
+      }
+
+      const isOpen = card.dataset.infoOpen === "true";
+      card.dataset.infoOpen = isOpen ? "false" : "true";
+      updateInfoToggle(card);
+    });
 
     // Socket.io connection
     const socket = io({

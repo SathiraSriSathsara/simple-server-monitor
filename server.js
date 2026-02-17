@@ -6,6 +6,7 @@ const Database = require("better-sqlite3");
 const nodemailer = require("nodemailer");
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
+const path = require("path");
 
 const app = express();
 app.use(express.json({ limit: "50kb" }));
@@ -53,7 +54,6 @@ CREATE TABLE IF NOT EXISTS alert_state (
   cpu_last_email_ts INTEGER DEFAULT 0
 );
 
-
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT UNIQUE NOT NULL,
@@ -61,10 +61,41 @@ CREATE TABLE IF NOT EXISTS users (
   created_at INTEGER NOT NULL
 );
 
-
+CREATE TABLE IF NOT EXISTS servers (
+  server_id TEXT PRIMARY KEY,
+  hostname TEXT,
+  os TEXT,
+  cpu_model TEXT,
+  cpu_cores INTEGER,
+  ram_total_mb INTEGER,
+  disk_total_gb INTEGER,
+  last_seen_ts INTEGER
+);
 `);
 
-// --- Ensure admin user exists ---
+// --- Statements ---
+const insertMetric = db.prepare(`
+INSERT INTO metrics (server_id, ts, cpu, ram, disk, net_rx_bps, net_tx_bps)
+VALUES (@server_id, @ts, @cpu, @ram, @disk, @net_rx_bps, @net_tx_bps)
+`);
+
+const upsertServer = db.prepare(`
+INSERT INTO servers (
+  server_id, hostname, os, cpu_model, cpu_cores, ram_total_mb, disk_total_gb, last_seen_ts
+) VALUES (
+  @server_id, @hostname, @os, @cpu_model, @cpu_cores, @ram_total_mb, @disk_total_gb, @last_seen_ts
+)
+ON CONFLICT(server_id) DO UPDATE SET
+  hostname=excluded.hostname,
+  os=excluded.os,
+  cpu_model=excluded.cpu_model,
+  cpu_cores=excluded.cpu_cores,
+  ram_total_mb=excluded.ram_total_mb,
+  disk_total_gb=excluded.disk_total_gb,
+  last_seen_ts=excluded.last_seen_ts;
+`);
+
+// --- Ensure admin user exists (DEV-friendly: always sync password with .env) ---
 function ensureAdminUser() {
   const adminUser = process.env.ADMIN_USER || "admin";
   const adminPass = process.env.ADMIN_PASS || "admin123";
@@ -79,19 +110,16 @@ function ensureAdminUser() {
     db.prepare(
       "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)"
     ).run(adminUser, hash, Math.floor(Date.now() / 1000));
-
-    console.log(`✅ Created admin user: ${adminUser} ${adminPass}`);
+    console.log(`✅ Created admin user: ${adminUser} (password from .env)`);
   } else {
-    db.prepare("UPDATE users SET password_hash = ? WHERE username = ?")
-      .run(hash, adminUser);
-
+    db.prepare("UPDATE users SET password_hash = ? WHERE username = ?").run(
+      hash,
+      adminUser
+    );
     console.log(`✅ Updated admin password from .env for: ${adminUser}`);
   }
 }
-
 ensureAdminUser();
-
-
 
 // --- Email setup ---
 const transporter = nodemailer.createTransport({
@@ -120,21 +148,16 @@ function verifyIngest(req, res, next) {
   next();
 }
 
+// --- Login guard ---
 function requireLogin(req, res, next) {
   if (req.session && req.session.userId) return next();
-  // If API request, send JSON. If browser, redirect.
+
   if (req.path.startsWith("/api/")) {
     return res.status(401).json({ ok: false, error: "Not logged in" });
   }
+
   return res.redirect(`/login.html?next=${encodeURIComponent(req.originalUrl)}`);
 }
-
-
-// --- Ingest endpoint ---
-const insertMetric = db.prepare(`
-INSERT INTO metrics (server_id, ts, cpu, ram, disk, net_rx_bps, net_tx_bps)
-VALUES (@server_id, @ts, @cpu, @ram, @disk, @net_rx_bps, @net_tx_bps)
-`);
 
 // --- Auth endpoints ---
 app.post("/api/auth/login", (req, res) => {
@@ -171,7 +194,7 @@ app.get("/api/auth/me", (req, res) => {
   res.status(401).json({ ok: false });
 });
 
-
+// --- Ingest endpoint ---
 app.post("/api/ingest", verifyIngest, (req, res) => {
   const m = req.body;
 
@@ -187,63 +210,97 @@ app.post("/api/ingest", verifyIngest, (req, res) => {
     return res.status(400).json({ ok: false, error: "Invalid payload" });
   }
 
-  insertMetric.run(m);
+  // Save metric (only the metric fields)
+  insertMetric.run({
+    server_id: m.server_id,
+    ts: m.ts,
+    cpu: m.cpu,
+    ram: m.ram,
+    disk: m.disk,
+    net_rx_bps: m.net_rx_bps,
+    net_tx_bps: m.net_tx_bps,
+  });
 
-  // Push realtime to UI
+  // Save/update server info if provided
+  if (m.info && typeof m.info === "object") {
+    const safeInt = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.trunc(n) : null;
+    };
+    const safeText = (v) => {
+      if (typeof v !== "string") return null;
+      const s = v.trim();
+      return s.length ? s : null;
+    };
+
+    upsertServer.run({
+      server_id: m.server_id,
+      hostname: safeText(m.info.hostname),
+      os: safeText(m.info.os),
+      cpu_model: safeText(m.info.cpu_model),
+      cpu_cores: safeInt(m.info.cpu_cores) ?? 0,
+      ram_total_mb: safeInt(m.info.ram_total_mb) ?? 0,
+      disk_total_gb: safeInt(m.info.disk_total_gb) ?? 0,
+      last_seen_ts: m.ts,
+    });
+  }
+
+  // Push realtime to UI (you can include info too; UI can use it)
   io.emit("metric", m);
 
   res.json({ ok: true });
 });
 
-
+// --- Offline status ---
 const OFFLINE_AFTER_SECONDS = Number(process.env.OFFLINE_AFTER_SECONDS || 15);
 
-
-// Latest per server
+// Latest per server (includes static info)
 app.get("/api/latest", requireLogin, (req, res) => {
   const now = Math.floor(Date.now() / 1000);
 
   const rows = db
     .prepare(
       `
-      SELECT m.*
+      SELECT 
+        m.*,
+        s.hostname, s.os, s.cpu_model, s.cpu_cores, s.ram_total_mb, s.disk_total_gb
       FROM metrics m
       INNER JOIN (
         SELECT server_id, MAX(ts) AS max_ts
         FROM metrics
         GROUP BY server_id
       ) x ON x.server_id = m.server_id AND x.max_ts = m.ts
+      LEFT JOIN servers s ON s.server_id = m.server_id
       ORDER BY m.server_id;
     `
     )
     .all();
 
-  const data = rows.map((m) => ({
-    ...m,
-    online: (now - m.ts) <= OFFLINE_AFTER_SECONDS,
-    last_seen_seconds: now - m.ts,
+  const data = rows.map((row) => ({
+    ...row,
+    online: now - row.ts <= OFFLINE_AFTER_SECONDS,
+    last_seen_seconds: now - row.ts,
   }));
 
   res.json({ ok: true, data });
 });
 
-
 // Redirect root to dashboard (with auth)
 app.get("/", requireLogin, (req, res) => {
-  res.redirect("/index.html"); // or res.sendFile(...) if you prefer
+  res.redirect("/index.html");
 });
 
 // Protect all .html routes except login.html
 app.get(/^\/(?!login\.html).*\.html$/, requireLogin);
 
-// Serve simple UI
+// Serve UI
 app.use(express.static("public"));
 
 // --- Alert worker: CPU >= 100 for 5 minutes ---
 const CPU_THRESHOLD = 100;
 const WINDOW_SECONDS = 300; // 5 mins
 const CHECK_EVERY_MS = 60 * 1000; // 1 min
-const EMAIL_COOLDOWN_SECONDS = 45 * 60; // 45 mins cooldown to avoid spamming
+const EMAIL_COOLDOWN_SECONDS = 45 * 60; // 45 mins cooldown
 
 function ensureAlertState(serverId) {
   db.prepare(
@@ -300,8 +357,9 @@ async function alertLoop() {
     const cooldownOk = now - lastEmail >= EMAIL_COOLDOWN_SECONDS;
 
     if (shouldTrigger && (!active || cooldownOk)) {
-      // fire alert
-      const subject = `ALERT: ${serverId} CPU high (${avgCpu.toFixed(1)}% avg / 5m)`;
+      const subject = `ALERT: ${serverId} CPU high (${avgCpu.toFixed(
+        1
+      )}% avg / 5m)`;
       const text = `Server: ${serverId}\nAvg CPU (last 5m): ${avgCpu.toFixed(
         1
       )}%\nTime: ${new Date().toISOString()}`;
@@ -315,7 +373,6 @@ async function alertLoop() {
       }
     }
 
-    // resolve (optional): mark inactive when CPU drops
     if (!shouldTrigger && active) {
       updateAlertState(serverId, false, lastEmail);
       console.log(`Resolved CPU alert for ${serverId}`);
@@ -333,4 +390,6 @@ io.on("connection", (socket) => {
 
 // Start
 const PORT = Number(process.env.PORT || 5050);
-server.listen(PORT, () => console.log(`Dashboard running on http://localhost:${PORT}`));
+server.listen(PORT, () =>
+  console.log(`Dashboard running on http://localhost:${PORT}`)
+);
