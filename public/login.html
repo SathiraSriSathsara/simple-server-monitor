@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Login · VPS Monitor (shadcn/ui)</title>
-    
+    <title>Login · Server Monitor</title>
+
     <!-- Font (Inter, used by shadcn) & base styling -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
-    
+
     <!-- shadcn/ui style reset + variables + component classes (simplified, modern) -->
     <style>
         /* ---------- Shadcn-inspired design tokens ---------- */
@@ -26,7 +27,7 @@
             --card-foreground: 222.2 84% 4.9%;
             --popover: 0 0% 100%;
             --popover-foreground: 222.2 84% 4.9%;
-            --primary: 221.2 83.2% 53.3%;
+            --primary: 222.2 47.4% 11.2%;
             --primary-foreground: 210 40% 98%;
             --secondary: 210 40% 96.1%;
             --secondary-foreground: 222.2 47.4% 11.2%;
@@ -38,7 +39,7 @@
             --destructive-foreground: 210 40% 98%;
             --border: 214.3 31.8% 91.4%;
             --input: 214.3 31.8% 91.4%;
-            --ring: 221.2 83.2% 53.3%;
+            --ring: 222.2 84% 4.9%;
             --radius: 0.5rem;
         }
 
@@ -143,8 +144,8 @@
         }
 
         .btn:hover {
-            background-color: hsl(221.2 83.2% 45%);
-            border-color: hsl(221.2 83.2% 45%);
+            background-color: hsl(240, 2%, 9%);
+            border-color: hsl(0, 0%, 8%);
         }
 
         .btn:focus-visible {
@@ -193,42 +194,46 @@
         }
     </style>
 </head>
+
 <body>
 
-<div class="card">
-    <div class="card-header">
-        <h2>VPS Monitor</h2>
-        <p>Enter your credentials to access the dashboard</p>
+    <div class="card">
+        <div class="card-header">
+            <h2>Server Monitor</h2>
+            <p>Enter your credentials to access the dashboard</p>
+        </div>
+
+        <!-- Shadcn-style form with labels & inputs -->
+        <div class="form-group">
+            <label for="u" class="label">Username</label>
+            <input type="text" id="u" class="input" placeholder="your username" autocomplete="username" autofocus />
+        </div>
+
+        <div class="form-group">
+            <label for="p" class="label">Password</label>
+            <input type="password" id="p" class="input" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+
+        <button class="btn" onclick="login()" id="loginBtn">Login</button>
+
+        <!-- error container styled as shadcn destructive alert -->
+        <div id="err" class="error" style="display: none;">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="errMessage"></span>
+        </div>
+
+        <div class="text-muted">
+            Developed by ❤️ <a href="https://github.com/SathiraSriSathsara" class="text-muted"
+                style="text-decoration: none;">Sathira Sri Sathsara</a>
+        </div>
     </div>
 
-    <!-- Shadcn-style form with labels & inputs -->
-    <div class="form-group">
-        <label for="u" class="label">Username</label>
-        <input type="text" id="u" class="input" placeholder="your username" autocomplete="username" autofocus />
-    </div>
-
-    <div class="form-group">
-        <label for="p" class="label">Password</label>
-        <input type="password" id="p" class="input" placeholder="••••••••" autocomplete="current-password" />
-    </div>
-
-    <button class="btn" onclick="login()" id="loginBtn">Login</button>
-
-    <!-- error container styled as shadcn destructive alert -->
-    <div id="err" class="error" style="display: none;">
-        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <span id="errMessage"></span>
-    </div>
-
-    <div class="text-muted">
-        secured by shadcn/ui &nbsp;•&nbsp; demo credentials: admin / monitor
-    </div>
-</div>
-
-<script>
-        (function() {
+    <script>
+        (function () {
             // cache elements
             const usernameInput = document.getElementById('u');
             const passwordInput = document.getElementById('p');
@@ -252,7 +257,7 @@
             usernameInput.addEventListener('input', hideError);
             passwordInput.addEventListener('input', hideError);
 
-            window.login = async function() {
+            window.login = async function () {
                 const username = usernameInput.value.trim();
                 const password = passwordInput.value;
 
@@ -320,4 +325,5 @@
 
     <!-- Optional subtle border-ring effect matches shadcn/radix -->
 </body>
+
 </html>
