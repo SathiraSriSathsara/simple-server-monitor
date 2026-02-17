@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VPS Monitor • Realtime Dashboard</title>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 222.2 84% 4.9%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 222.2 84% 4.9%;
+      --primary: 222.2 47.4% 11.2%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96.1%;
+      --secondary-foreground: 222.2 47.4% 11.2%;
+      --muted: 210 40% 96.1%;
+      --muted-foreground: 215.4 16.3% 46.9%;
+      --accent: 210 40% 96.1%;
+      --accent-foreground: 222.2 47.4% 11.2%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 214.3 31.8% 91.4%;
+      --input: 214.3 31.8% 91.4%;
+      --ring: 222.2 84% 4.9%;
+      --radius: 0.5rem;
+    }
+
+    .dark {
+      --background: 222.2 84% 4.9%;
+      --foreground: 210 40% 98%;
+      --card: 222.2 84% 4.9%;
+      --card-foreground: 210 40% 98%;
+      --popover: 222.2 84% 4.9%;
+      --popover-foreground: 210 40% 98%;
+      --primary: 210 40% 98%;
+      --primary-foreground: 222.2 47.4% 11.2%;
+      --secondary: 217.2 32.6% 17.5%;
+      --secondary-foreground: 210 40% 98%;
+      --muted: 217.2 32.6% 17.5%;
+      --muted-foreground: 215 20.2% 65.1%;
+      --accent: 217.2 32.6% 17.5%;
+      --accent-foreground: 210 40% 98%;
+      --destructive: 0 62.8% 30.6%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 217.2 32.6% 17.5%;
+      --input: 217.2 32.6% 17.5%;
+      --ring: 212.7 26.8% 83.9%;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px;
+    }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-radius: calc(var(--radius) - 2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .title-section h1 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: hsl(var(--foreground));
+      margin-bottom: 4px;
+    }
+
+    /* Connection Status */
+    .connection-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      background: hsl(var(--secondary));
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 500;
+      color: hsl(var(--secondary-foreground));
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+
+    .status-dot.disconnected {
+      background: #ef4444;
+    }
+
+    /* Logout Button */
+    .logout-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: hsl(var(--secondary));
+      border: 1px solid hsl(var(--border));
+      border-radius: calc(var(--radius) - 2px);
+      font-size: 14px;
+      font-weight: 500;
+      color: hsl(var(--secondary-foreground));
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .logout-btn:hover {
+      background: hsl(var(--accent));
+      border-color: hsl(var(--ring));
+    }
+
+    .logout-btn:active {
+      transform: translateY(1px);
+    }
+
+    /* Stats Overview */
+    .stats-overview {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: hsl(var(--secondary));
+      border-radius: calc(var(--radius) - 2px);
+      font-size: 14px;
+      font-weight: 500;
+      color: hsl(var(--secondary-foreground));
+    }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    /* Card - shadcn style */
+    .card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 20px;
+      transition: all 0.2s ease;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .card:hover {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .server-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .server-icon {
+      width: 40px;
+      height: 40px;
+      background: hsl(var(--secondary));
+      border-radius: calc(var(--radius) - 2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: hsl(var(--secondary-foreground));
+    }
+
+    .server-name {
+      font-weight: 600;
+      font-size: 15px;
+      color: hsl(var(--card-foreground));
+    }
+
+    .timestamp {
+      font-size: 12px;
+      color: hsl(var(--muted-foreground));
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    /* Metric Grid */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .metric-item {
+      background: hsl(var(--secondary));
+      border-radius: calc(var(--radius) - 2px);
+      padding: 12px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: hsl(var(--muted-foreground));
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metric-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: hsl(var(--card-foreground));
+      line-height: 1.2;
+    }
+
+    .metric-unit {
+      font-size: 12px;
+      font-weight: 400;
+      color: hsl(var(--muted-foreground));
+      margin-left: 2px;
+    }
+
+    /* Progress Bar */
+    .progress {
+      width: 100%;
+      height: 8px;
+      background: hsl(var(--border));
+      border-radius: 9999px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .progress-indicator {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-indicator.cpu { background: #3b82f6; }
+    .progress-indicator.ram { background: #10b981; }
+    .progress-indicator.disk { background: #f59e0b; }
+
+    /* Network Stats */
+    .network-stats {
+      grid-column: span 2;
+      display: flex;
+      justify-content: space-between;
+      background: hsl(var(--secondary));
+      border-radius: calc(var(--radius) - 2px);
+      padding: 12px;
+      margin-top: 8px;
+    }
+
+    .network-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .network-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .network-label {
+      font-size: 11px;
+      color: hsl(var(--muted-foreground));
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .network-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: hsl(var(--card-foreground));
+    }
+
+    /* Empty State */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 24px;
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      color: hsl(var(--muted-foreground));
+    }
+
+    .empty-state-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 16px;
+      color: hsl(var(--muted-foreground));
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: hsl(var(--card-foreground));
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+    }
+
+    /* Icons */
+    .icon {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2;
+    }
+
+    .icon-sm {
+      width: 16px;
+      height: 16px;
+    }
+
+    .icon-lg {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      body { padding: 16px; }
+      .header { flex-direction: column; align-items: flex-start; }
+      .header-right { width: 100%; }
+      .logout-btn { width: 100%; justify-content: center; }
+      .stats-overview { width: 100%; }
+      .metric-grid { grid-template-columns: 1fr; }
+      .network-stats { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body class="dark">
+  <div class="dashboard">
+    <div class="header">
+      <div class="header-left">
+        <div class="logo">
+          <i data-lucide="gauge" class="icon-lg"></i>
+        </div>
+        <div class="title-section">
+          <h1>VPS Monitor</h1>
+          <div class="connection-status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="status">Connecting...</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <div class="stats-overview">
+          <div class="stat-card">
+            <i data-lucide="server" class="icon"></i>
+            <span id="serverCount">0</span> servers
+          </div>
+          <div class="stat-card">
+            <i data-lucide="cpu" class="icon"></i>
+            <span id="avgCpu">0</span>% avg
+          </div>
+          <div class="stat-card">
+            <i data-lucide="activity" class="icon"></i>
+            <span>Live</span>
+          </div>
+        </div>
+
+        <!-- Logout Button -->
+        <button class="logout-btn" onclick="logout()">
+          <i data-lucide="log-out" class="icon"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Logout function
+    async function logout() {
+      try {
+        await fetch("/api/auth/logout", { method: "POST" });
+        location.href = "/login.html";
+      } catch (error) {
+        console.error('Logout failed:', error);
+        // Still redirect to login page even if API call fails
+        location.href = "/login.html";
+      }
+    }
+
+    const grid = document.getElementById("grid");
+    const statusEl = document.getElementById("status");
+    const statusDot = document.getElementById("statusDot");
+    const serverCountEl = document.getElementById("serverCount");
+    const avgCpuEl = document.getElementById("avgCpu");
+    
+    const state = {};
+
+    function updateStats() {
+      const servers = Object.keys(state);
+      serverCountEl.textContent = servers.length;
+      
+      if (servers.length > 0) {
+        const avgCpu = servers.reduce((acc, id) => acc + state[id].cpu, 0) / servers.length;
+        avgCpuEl.textContent = avgCpu.toFixed(1);
+      } else {
+        avgCpuEl.textContent = '0';
+      }
+    }
+
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      
+      if (seconds < 30) return 'just now';
+      if (seconds < 60) return `${seconds}s ago`;
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+      return date.toLocaleDateString();
+    }
+
+    function formatBps(v) {
+      if (v < 1024) return v.toFixed(0) + ' B/s';
+      if (v < 1024 * 1024) return (v / 1024).toFixed(1) + ' KB/s';
+      if (v < 1024 * 1024 * 1024) return (v / (1024 * 1024)).toFixed(1) + ' MB/s';
+      return (v / (1024 * 1024 * 1024)).toFixed(2) + ' GB/s';
+    }
+
+    function render() {
+      const serverIds = Object.keys(state).sort();
+      
+      if (serverIds.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <i data-lucide="radio" class="icon-lg"></i>
+            </div>
+            <h3>No servers connected</h3>
+            <p>Waiting for metrics from your VPS instances...</p>
+          </div>
+        `;
+        
+        // Initialize icons for empty state
+        lucide.createIcons();
+        return;
+      }
+
+      grid.innerHTML = "";
+      
+      serverIds.forEach(id => {
+        const m = state[id];
+        const lastUpdate = new Date(m.ts * 1000);
+        const timeAgo = getTimeAgo(lastUpdate);
+        
+        const card = document.createElement("div");
+        card.className = "card";
+        
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="server-info">
+              <div class="server-icon">
+                <i data-lucide="server" class="icon"></i>
+              </div>
+              <div>
+                <div class="server-name">${id}</div>
+                <div class="timestamp">
+                  <i data-lucide="clock" class="icon-sm"></i>
+                  <span title="${lastUpdate.toLocaleString()}">${timeAgo}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="metric-grid">
+            <!-- CPU -->
+            <div class="metric-item">
+              <div class="metric-label">
+                <i data-lucide="cpu" class="icon-sm"></i>
+                CPU
+              </div>
+              <div class="metric-value">
+                ${m.cpu.toFixed(1)}<span class="metric-unit">%</span>
+              </div>
+              <div class="progress">
+                <div class="progress-indicator cpu" style="width: ${m.cpu}%"></div>
+              </div>
+            </div>
+            
+            <!-- RAM -->
+            <div class="metric-item">
+              <div class="metric-label">
+                <i data-lucide="memory-stick" class="icon-sm"></i>
+                RAM
+              </div>
+              <div class="metric-value">
+                ${m.ram.toFixed(1)}<span class="metric-unit">%</span>
+              </div>
+              <div class="progress">
+                <div class="progress-indicator ram" style="width: ${m.ram}%"></div>
+              </div>
+            </div>
+            
+            <!-- Disk -->
+            <div class="metric-item">
+              <div class="metric-label">
+                <i data-lucide="hard-drive" class="icon-sm"></i>
+                Disk
+              </div>
+              <div class="metric-value">
+                ${m.disk.toFixed(1)}<span class="metric-unit">%</span>
+              </div>
+              <div class="progress">
+                <div class="progress-indicator disk" style="width: ${m.disk}%"></div>
+              </div>
+            </div>
+            
+            <!-- Network Stats -->
+            <div class="network-stats">
+              <div class="network-item">
+                <i data-lucide="download" class="icon-sm" style="color: #3b82f6;"></i>
+                <div class="network-info">
+                  <span class="network-label">Download</span>
+                  <span class="network-value">${formatBps(m.net_rx_bps)}</span>
+                </div>
+              </div>
+              <div class="network-item">
+                <i data-lucide="upload" class="icon-sm" style="color: #10b981;"></i>
+                <div class="network-info">
+                  <span class="network-label">Upload</span>
+                  <span class="network-value">${formatBps(m.net_tx_bps)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        grid.appendChild(card);
+      });
+      
+      // Initialize Lucide icons for all new elements
+      lucide.createIcons();
+      
+      updateStats();
+    }
+
+    async function loadLatest() {
+      try {
+        const res = await fetch('/api/latest');
+        const json = await res.json();
+        if (json.ok) {
+          json.data.forEach(m => state[m.server_id] = m);
+          render();
+        }
+      } catch (error) {
+        console.error('Failed to load latest data:', error);
+      }
+    }
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Socket.io connection
+    const socket = io({
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+
+    socket.on('connect', () => {
+      statusEl.textContent = 'Connected';
+      statusDot.className = 'status-dot';
+    });
+    
+    socket.on('disconnect', () => {
+      statusEl.textContent = 'Disconnected';
+      statusDot.classList.add('disconnected');
+    });
+    
+    socket.on('connect_error', () => {
+      statusEl.textContent = 'Connection error';
+      statusDot.classList.add('disconnected');
+    });
+    
+    socket.on('metric', (m) => {
+      state[m.server_id] = m;
+      render();
+    });
+
+    // Initial load
+    loadLatest();
+
+    // Update timestamps every minute
+    setInterval(() => {
+      if (Object.keys(state).length > 0) {
+        render();
+      }
+    }, 60000);
+  </script>
+</body>
+</html>

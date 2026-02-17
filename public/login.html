@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login · VPS Monitor (shadcn/ui)</title>
+    
+    <!-- Font (Inter, used by shadcn) & base styling -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
+    
+    <!-- shadcn/ui style reset + variables + component classes (simplified, modern) -->
+    <style>
+        /* ---------- Shadcn-inspired design tokens ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 222.2 84% 4.9%;
+            --primary: 221.2 83.2% 53.3%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96.1%;
+            --secondary-foreground: 222.2 47.4% 11.2%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 96.1%;
+            --accent-foreground: 222.2 47.4% 11.2%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 221.2 83.2% 53.3%;
+            --radius: 0.5rem;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 1.5rem;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ---------- Card (shadcn/ui look) ---------- */
+        .card {
+            background-color: hsl(var(--card));
+            border-radius: var(--radius);
+            border: 1px solid hsl(var(--border));
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        .card-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: hsl(var(--foreground));
+        }
+
+        .card-header p {
+            font-size: 0.9rem;
+            color: hsl(var(--muted-foreground));
+            margin-top: 0.25rem;
+        }
+
+        /* ---------- Form elements (shadcn style) ---------- */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            color: hsl(var(--foreground));
+        }
+
+        .input {
+            width: 100%;
+            height: 2.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            background-color: hsl(var(--background));
+            border: 1px solid hsl(var(--input));
+            border-radius: calc(var(--radius) - 0.125rem);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .input:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(221.2, 83.2%, 53.3%, 0.25);
+        }
+
+        .input::placeholder {
+            color: hsl(var(--muted-foreground));
+            opacity: 0.6;
+        }
+
+        /* button – shadcn primary */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 2.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            line-height: 1.5;
+            border-radius: calc(var(--radius) - 0.125rem);
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            border: 1px solid hsl(var(--primary));
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn:hover {
+            background-color: hsl(221.2 83.2% 45%);
+            border-color: hsl(221.2 83.2% 45%);
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid hsl(var(--ring));
+            outline-offset: 2px;
+        }
+
+        /* destructive error styling */
+        .error {
+            margin-top: 1.25rem;
+            padding: 0.7rem 1rem;
+            border-radius: calc(var(--radius) - 0.125rem);
+            background-color: hsl(0 84.2% 60.2% / 0.1);
+            border: 1px solid hsl(0 84.2% 60.2% / 0.3);
+            color: hsl(0 74% 42%);
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .error svg {
+            width: 1.1rem;
+            height: 1.1rem;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* small helper */
+        .text-muted {
+            color: hsl(var(--muted-foreground));
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 1.2rem;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="card-header">
+        <h2>VPS Monitor</h2>
+        <p>Enter your credentials to access the dashboard</p>
+    </div>
+
+    <!-- Shadcn-style form with labels & inputs -->
+    <div class="form-group">
+        <label for="u" class="label">Username</label>
+        <input type="text" id="u" class="input" placeholder="your username" autocomplete="username" autofocus />
+    </div>
+
+    <div class="form-group">
+        <label for="p" class="label">Password</label>
+        <input type="password" id="p" class="input" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+
+    <button class="btn" onclick="login()" id="loginBtn">Login</button>
+
+    <!-- error container styled as shadcn destructive alert -->
+    <div id="err" class="error" style="display: none;">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span id="errMessage"></span>
+    </div>
+
+    <div class="text-muted">
+        secured by shadcn/ui &nbsp;•&nbsp; demo credentials: admin / monitor
+    </div>
+</div>
+
+<script>
+        (function() {
+            // cache elements
+            const usernameInput = document.getElementById('u');
+            const passwordInput = document.getElementById('p');
+            const errorDiv = document.getElementById('err');
+            const errMessageSpan = document.getElementById('errMessage');
+            const loginBtn = document.getElementById('loginBtn');
+
+            // helper: show error (shadcn style)
+            function showError(text) {
+                errMessageSpan.textContent = text;
+                errorDiv.style.display = 'flex';   // using flex to match error layout
+                errorDiv.setAttribute('role', 'alert');
+            }
+
+            function hideError() {
+                errorDiv.style.display = 'none';
+                errMessageSpan.textContent = '';
+            }
+
+            // optionally hide error when user starts typing
+            usernameInput.addEventListener('input', hideError);
+            passwordInput.addEventListener('input', hideError);
+
+            window.login = async function() {
+                const username = usernameInput.value.trim();
+                const password = passwordInput.value;
+
+                // basic frontend validation (optional)
+                if (!username || !password) {
+                    showError('Username and password are required');
+                    return;
+                }
+
+                // disable button to prevent double submit (shadcn style interaction)
+                loginBtn.disabled = true;
+                loginBtn.style.opacity = '0.7';
+                loginBtn.style.cursor = 'not-allowed';
+                const originalText = loginBtn.textContent;
+                loginBtn.textContent = 'Logging in...';
+
+                hideError();
+
+                try {
+                    const res = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    if (!res) throw new Error('Network error — unable to reach server');
+
+                    const json = await res.json().catch(() => ({}));
+
+                    if (json && json.ok === true) {
+                        const next = new URLSearchParams(location.search).get('next') || '/';
+                        window.location.href = next;
+                        return; // page will unload
+                    } else {
+                        // server returned error, e.g. { error: "Invalid credentials" }
+                        const errorMsg = (json && json.error) ? json.error : 'Login failed';
+                        showError(errorMsg);
+                    }
+                } catch (err) {
+                    console.warn('Login error:', err);
+                    showError(err.message || 'Connection error');
+                } finally {
+                    // re-enable button if we're still on the page
+                    loginBtn.disabled = false;
+                    loginBtn.style.opacity = '';
+                    loginBtn.style.cursor = '';
+                    loginBtn.textContent = originalText;
+                }
+            };
+
+            // Allow pressing Enter in any input to trigger login
+            [usernameInput, passwordInput].forEach(field => {
+                field.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        login();
+                    }
+                });
+            });
+
+            // initially hide error
+            hideError();
+        })();
+    </script>
+
+    <!-- Optional subtle border-ring effect matches shadcn/radix -->
+</body>
+</html>
